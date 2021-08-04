@@ -56,22 +56,19 @@ class GithubApi:
         #curl -u AlexBaturo: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  -X PATCH   -H "Accept: application/vnd.github.v3+json"   https://api.github.com/repos/AlexBaturo/Jenkins/git/refs/heads/dev   -d '{"sha":"90f5a1500731930765652a98623cf650624a9214"}'
         #Обновление коммита
 
-    def getChangedFiles(self):
-        bash_command = "git status"
-        result_os = os.popen(bash_command).read()
-        is_change = False
-        prepare_result = list()
-        for result in result_os.split('\n'):
-            if result.find('modified') != -1:
-                prepare_result.append(result.replace('\tmodified:   ', ''))
-                return ",".join(prepare_result)
+
+
+    def pullRequest(self):
+        pullRequestInfo = {"head":"dev","base":"master", "title" : "fromApi"}
+        pullRequestRespons = requests.post('{0}/repos/{1}/{2}/pulls'.format(self.url, self.user, self.repo), json=pullRequestInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+        print(pullRequestRespons.json())
 
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
-workBranch = "master"
+workBranch = "dev"
 
 test = GithubApi(url, user, token, repo, workBranch)
 test.commitPush()
-#test.getChangedFiles()
+test.pullRequest()
