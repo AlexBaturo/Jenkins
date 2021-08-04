@@ -19,16 +19,29 @@ class GithubApi:
         commitHead = requests.get('{0}/repos/{1}/{2}/git/commits/{3}'.format(self.url, self.user, self.repo, shaHead), auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
         # Получаем хэш дерева
         shaTree = commitHead.json()['tree']['sha'] 
-        # Загрузка измененных файлов
-        #data = {"content": self.getChangedFiles()}
-        changedFilesData = {"content": "README.md"}  
-        blob = requests.post('{0}/repos/{1}/{2}/git/blobs'.format(self.url, self.user, self.repo), json=changedFilesData, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
-        shaBlob = blob.json()['sha']
+        
+        # Собираем названия файлов, кроме .git
+        files = os.listdir()
+        files.remove('.git')
+        fileShaBlobDict = dict()
+        # Загрузка содержимого файлов
+        for file in files:
+
+            changedFilesData = {"content":  open(file,"r").read()}  
+            blob = requests.post('{0}/repos/{1}/{2}/git/blobs'.format(self.url, self.user, self.repo), json=changedFilesData, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+            fileShaBlobDict[file] = blob.json()['sha']
+        # Создание информации о файлах
+        changedFilesData = {"tree" : []}
+        for file, shaBlob in fileShaBlobDict.items():
+            changedFilesData["tree"].append({"path":file,"mode":"100644","type":"blob","sha": shaBlob})
+
         # инфа дерева последнего коммита
         tree = requests.get('{0}/repos/{1}/{2}/git/trees/{3}'.format(self.url, self.user, self.repo, shaTree), auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+        
         # создаем дерево
-        changedFilesData = {"tree":[{"path":"README.md","mode":"100644","type":"blob","sha": shaBlob}]}
+        #changedFilesData = {"tree":[{"path":"README.md","mode":"100644","type":"blob","sha": shaBlob1}, {"path":"testfile.jenkins","mode":"100644","type":"blob","sha": shaBlob2}]}
         treeHead = requests.post('{0}/repos/{1}/{2}/git/trees'.format(self.url, self.user, self.repo), json=changedFilesData, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+        
         shaTreeHead = treeHead.json()['sha']
         #print(treeHead.json())
         #Создание коммита
@@ -38,7 +51,7 @@ class GithubApi:
 
         updateInfo = {"sha": shaNewCommit}
         updateResponse = requests.post('{0}/repos/{1}/{2}/git/refs/heads/master'.format(self.url, self.user, self.repo), json=updateInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
-        print(updateResponse.json())
+        
         #curl -u AlexBaturo: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  -X PATCH   -H "Accept: application/vnd.github.v3+json"   https://api.github.com/repos/AlexBaturo/Jenkins/git/refs/heads/master   -d '{"sha":"90f5a1500731930765652a98623cf650624a9214"}'
         #Обновление коммита
 
@@ -54,7 +67,7 @@ class GithubApi:
 
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
 
 test = GithubApi(url, user, token, repo)
