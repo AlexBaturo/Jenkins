@@ -12,9 +12,9 @@ pipeline {
     }
     stages {
         stage("First step") {
-            steps {wwewe
+            steps {
                 sh 'echo helllooo'
-            }С‹С‹С‹С‹
+            }
         }
         stage("Second step") {
             steps {
