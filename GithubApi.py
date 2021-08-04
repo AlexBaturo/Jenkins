@@ -4,16 +4,15 @@ import json
 import os
 
 class GithubApi:
-    def __init__(self, url, user, token, repo, workBranch):
+    def __init__(self, url, user, token, repo):
         self.url = url
         self.user = user
         self.token = token
         self.repo = repo
-        self.workBranch = workBranch
 
-    def commitPush(self):
+    def commitPush(self, workBranch):
         # Получаем ссылку на последний коммит
-        ref = requests.get('{0}/repos/{1}/{2}/git/matching-refs/heads/{3}'.format(self.url, self.user, self.repo, self.workBranch), auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+        ref = requests.get('{0}/repos/{1}/{2}/git/matching-refs/heads/{3}'.format(self.url, self.user, self.repo, workBranch), auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
         # Получаем хэш последнего коммита
         shaHead = ref.json()[0]['object']['sha']
         # Получаем инфу о последнем коммите в ветке workBranch
@@ -58,14 +57,14 @@ class GithubApi:
 
 
 
-    def pullRequest(self):
-        pullRequestInfo = {"head":"dev","base":"master", "title" : "fromApi"}
+    def pullRequest(self, workBranch):
+        pullRequestInfo = {"head": workBranch,"base":"master", "title" : "fromApi"}
         pullRequestRespons = requests.post('{0}/repos/{1}/{2}/pulls'.format(self.url, self.user, self.repo), json=pullRequestInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
         print(pullRequestRespons.json())
 
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
 workBranch = "dev"
 
