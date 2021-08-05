@@ -21,11 +21,11 @@ class GithubApi:
         shaTree = commitHead.json()['tree']['sha'] 
         
         # Собираем названия файлов, кроме .git
-        files = os.listdir()
-        files.remove('.git')
+        filesList = self.__getProjectFiles()
+        
         fileShaBlobDict = dict()
         # Загрузка содержимого файлов
-        for file in files:
+        for file in filesList:
 
             changedFilesData = {"content":  open(file,"r").read()}  
             blob = requests.post('{0}/repos/{1}/{2}/git/blobs'.format(self.url, self.user, self.repo), json=changedFilesData, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
@@ -41,7 +41,7 @@ class GithubApi:
         # создаем дерево
         #changedFilesData = {"tree":[{"path":"README.md","mode":"100644","type":"blob","sha": shaBlob1}, {"path":"testfile.jenkins","mode":"100644","type":"blob","sha": shaBlob2}]}
         treeHead = requests.post('{0}/repos/{1}/{2}/git/trees'.format(self.url, self.user, self.repo), json=changedFilesData, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
-        
+        print(treeHead.json())
         shaTreeHead = treeHead.json()['sha']
         #print(treeHead.json())
         #Создание коммита
@@ -50,7 +50,7 @@ class GithubApi:
         shaNewCommit = commitRespons.json()['sha']
 
         updateInfo = {"sha": shaNewCommit}
-        updateResponse = requests.post('{0}/repos/{1}/{2}/git/refs/heads/{3}'.format(self.url, self.user, self.repo, self.workBranch), json=updateInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
+        updateResponse = requests.post('{0}/repos/{1}/{2}/git/refs/heads/{3}'.format(self.url, self.user, self.repo, workBranch), json=updateInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
         
         #curl -u AlexBaturo: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  -X PATCH   -H "Accept: application/vnd.github.v3+json"   https://api.github.com/repos/AlexBaturo/Jenkins/git/refs/heads/dev   -d '{"sha":"90f5a1500731930765652a98623cf650624a9214"}'
         #Обновление коммита
@@ -62,12 +62,25 @@ class GithubApi:
         pullRequestRespons = requests.post('{0}/repos/{1}/{2}/pulls'.format(self.url, self.user, self.repo), json=pullRequestInfo, auth=(self.user, self.token), headers={"Accept" : "application/vnd.github.v3+json"})
         print(pullRequestRespons.json())
 
+    def __getProjectFiles(self):
+        folder = []
+        for i in os.walk('.'):
+            if('.git' not in i[0]):
+                folder.append(i)
+        filesList = [] 
+        for address, dirs, files in folder:
+            for file in files:
+                path = address+'/'+file
+                filesList.append(path.split('./')[1])
+
+        return filesList
+
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
 workBranch = "dev"
 
-test = GithubApi(url, user, token, repo, workBranch)
-test.commitPush()
-test.pullRequest()
+test = GithubApi(url, user, token, repo)
+test.commitPush(workBranch)
+test.pullRequest(workBranch)
