@@ -2,6 +2,7 @@
 import requests
 import json
 import os
+import sys
 
 class GithubApi:
     def __init__(self, url, user, token):
@@ -11,14 +12,19 @@ class GithubApi:
         self.header = {"Accept" : "application/vnd.github.v3+json"}
         self.prefix = '{0}/repos/{1}'.format(self.url, self.user)
 
-    def commitPush(self, workBranch, repo):
+    def commitPush(self, workBranch, repo, message):
 
         # Получаем ссылку на последний коммит
         ref = requests.get('{0}/{1}/git/matching-refs/heads/{2}'.format(self.prefix, repo, workBranch), 
                              auth=(self.user, self.token),
                              headers=self.header)
+        
         # Получаем хэш последнего коммита
-        shaHead = ref.json()[0]['object']['sha']
+        try:
+            shaHead = ref.json()[0]['object']['sha']
+        except KeyError:
+            print("Проверить валидность токена")
+            exit(1)
         # Получаем инфу о последнем коммите в ветке workBranch
         commitHead = requests.get('{0}/{1}/git/commits/{2}'.format(self.prefix, repo, shaHead),
                                     auth=(self.user, self.token), 
@@ -61,7 +67,7 @@ class GithubApi:
        
         shaTreeHead = treeHead.json()['sha']
         #Создание коммита
-        commitInfo = {"message":"from api","tree": shaTreeHead, "parents": [shaHead] }
+        commitInfo = {"message":message,"tree": shaTreeHead, "parents": [shaHead] }
         commitRespons = requests.post('{0}/{1}/git/commits'.format(self.prefix, repo),
                                        json=commitInfo, 
                                        auth=(self.user, self.token),
@@ -75,9 +81,9 @@ class GithubApi:
                                         auth=(self.user, self.token),
                                         headers=self.header)
         
-    def pullRequest(self, workBranch, repo):
+    def pullRequest(self, workBranch, repo, message):
 
-        pullRequestInfo = {"head": workBranch,"base":"master", "title" : "fromApi"}
+        pullRequestInfo = {"head": workBranch,"base":"master", "title" : message}
         pullRequestRespons = requests.post('{0}/{1}/pulls'.format(self.prefix, repo),
                                             json=pullRequestInfo,
                                             auth=(self.user, self.token),
@@ -86,6 +92,7 @@ class GithubApi:
     def __getProjectFiles(self):
         folder = []
         for i in os.walk('.'):
+            # Убираем директорию .git
             if('.git' not in i[0]):
                 folder.append(i)
         filesList = [] 
@@ -96,12 +103,19 @@ class GithubApi:
 
         return filesList
 
+
+
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
 workBranch = "dev"
+try: 
+    message = sys.argv[1]
+except IndexError:
+    print("Необходимо ввести текст коммита!")
+    exit(1)
 
 test = GithubApi(url, user, token)
-test.commitPush(workBranch, repo)
-test.pullRequest(workBranch, repo)
+test.commitPush(workBranch, repo, message)
+test.pullRequest(workBranch, repo, message)
