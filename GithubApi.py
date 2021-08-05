@@ -55,14 +55,14 @@ class GithubApi:
         
         # создаем дерево
         #changedFilesData = {"tree":[{"path":"README.md","mode":"100644","type":"blob","sha": shaBlob1}, {"path":"testfile.jenkins","mode":"100644","type":"blob","sha": shaBlob2}]}
-        treeHead = requests.post('{0}/{2}/git/trees'.format(self.prefix, repo),
+        treeHead = requests.post('{0}/{1}/git/trees'.format(self.prefix, repo),
                                   json=changedFilesData, auth=(self.user, self.token), 
                                   headers=self.header)
        
         shaTreeHead = treeHead.json()['sha']
         #Создание коммита
         commitInfo = {"message":"from api","tree": shaTreeHead, "parents": [shaHead] }
-        commitRespons = requests.post('{0}/{2}/git/commits'.format(self.prefix, repo),
+        commitRespons = requests.post('{0}/{1}/git/commits'.format(self.prefix, repo),
                                        json=commitInfo, 
                                        auth=(self.user, self.token),
                                        headers=self.header)
@@ -70,15 +70,15 @@ class GithubApi:
         shaNewCommit = commitRespons.json()['sha']
 
         updateInfo = {"sha": shaNewCommit}
-        updateResponse = requests.post('{0}/{2}/git/refs/heads/{3}'.format(self.prefix, repo, workBranch),
+        updateResponse = requests.post('{0}/{1}/git/refs/heads/{2}'.format(self.prefix, repo, workBranch),
                                         json=updateInfo,
                                         auth=(self.user, self.token),
                                         headers=self.header)
         
-    def pullRequest(self, workBranch):
+    def pullRequest(self, workBranch, repo):
 
         pullRequestInfo = {"head": workBranch,"base":"master", "title" : "fromApi"}
-        pullRequestRespons = requests.post('{0}/{2}/pulls'.format(self.prefix, repo),
+        pullRequestRespons = requests.post('{0}/{1}/pulls'.format(self.prefix, repo),
                                             json=pullRequestInfo,
                                             auth=(self.user, self.token),
                                             headers=self.header)
@@ -98,7 +98,7 @@ class GithubApi:
 
 url = "https://api.github.com"
 user = "AlexBaturo"
-token = "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"
+token = "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"
 repo = "Jenkins"
 workBranch = "dev"
 
